@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Volcano Escape!</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link href="css/css.css" rel="stylesheet" type="text/css">
+	<link rel="shortcut icon" type="image/png" href="favicon.png" />
+</head>
+
+<body>
+
+	<script src="js/three.js"></script>
+	<script src="js/controls/controls.js"></script>
+	<script src="js/loaders/MTLLoader.js"></script>
+	<script src="js/loaders/OBJLoader.js"></script>
+
+	<div id="blocker"></div>
+	<div id="instructions">
+		<p class="keyboard-instructions"> (W, A, S, D = Move, SPACE = Jump, MOUSE = Look around)</p>
+		<p class="button button-blue" id="backBtn">« Back</p>
+	</div>
+	<div id="selectMenu">
+		<p class="button button-level" id="iceyBtn">Icey Peak</p>
+		<p class="button button-level" id="chemicalBtn">Chemical Lab</p>
+		<p class="button button-blue" id="backBtn">« Back</p>
+	</div>
+
+	<div id="pauseScreen">
+		<p class="button button-continue" id="continueBtn">Continue</p>
+		<p class="button button-quit" id="quitBtn">Quit</p>
+	</div>
+	<div id="menuScreen">
+		<div id="loadingScreen">
+			<video autoplay="true" poster="images/loadingPoster.jpg">
+				<source src="media/loading.mp4" type="video/mp4">
+			</video>
+		</div>
+		<img src="images/volcanoescape3.png" alt="volcano" height="700">
+		<div id="muteBtn"> </div>
+		<div id="buttons">
+			<p class="button button-play" id="playBtn">Play</p>
+			<p class="button button-level" id="slectLevelBtn">Select Level</p>
+			<p class="button button-help" id="helpBtn">Help</p>
+		</div>
+		<script src="js/mainGame.js"></script>
+		<div id="slidecontainer">
+			<p>DIFFICULTY</p>
+			<input type="range" min="0" max="8" value="3" class="slider" id="lavaSpeed">
+		</div>
+	</div>
+	<div id="scoreContainer">
+	</div>
+	<div id="scoreDisplay">
+	</div>
+	<div id="score">
+		<p id="scoreText"></p>
+	</div>
+</body>
+
+</html>
