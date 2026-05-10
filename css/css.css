@@ -348,3 +348,29 @@ h2 {
     padding: 20px;
   }
 }
+
+.touch-device .touch-controls {
+  display: flex;
+}
+
+.touch-device .hud {
+  top: 10px;
+  left: 10px;
+  gap: 6px;
+}
+
+.touch-device .hud > div {
+  min-width: 76px;
+  padding: 7px 8px;
+}
+
+.touch-device .hud strong {
+  font-size: 19px;
+}
+
+.touch-device .power-meter {
+  top: auto;
+  right: 10px;
+  bottom: 146px;
+  width: 120px;
+}
