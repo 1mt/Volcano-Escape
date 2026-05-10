@@ -53,6 +53,10 @@
     return Math.sqrt(x * x + z * z);
   }
 
+  function seededWave(seed, index, scale) {
+    return Math.sin(seed * 12.9898 + index * 78.233 + scale * 37.719);
+  }
+
   function Random(seed) {
     this.seed = seed || 1234;
   }
@@ -71,6 +75,7 @@
     this.jumpQueued = false;
     this.pointerWanted = false;
     this.touch = {};
+    this.joystick = { active: false, pointer: null, x: 0, z: 0 };
     this.lookPointer = null;
     this.lookX = 0;
     this.lookY = 0;
@@ -119,6 +124,55 @@
     mount.addEventListener("pointercancel", function (event) {
       if (event.pointerId === self.lookPointer) self.lookPointer = null;
     });
+    var joystick = document.getElementById("moveJoystick");
+    var joystickKnob = document.getElementById("moveJoystickKnob");
+    var resetJoystick = function () {
+      self.joystick.active = false;
+      self.joystick.pointer = null;
+      self.joystick.x = 0;
+      self.joystick.z = 0;
+      if (joystickKnob) joystickKnob.style.transform = "translate(-50%, -50%)";
+    };
+    var updateJoystick = function (event) {
+      if (!joystick || event.pointerId !== self.joystick.pointer) return;
+      var rect = joystick.getBoundingClientRect();
+      var centerX = rect.left + rect.width / 2;
+      var centerY = rect.top + rect.height / 2;
+      var maxDistance = rect.width * 0.34;
+      var dx = event.clientX - centerX;
+      var dy = event.clientY - centerY;
+      var distance = Math.sqrt(dx * dx + dy * dy);
+      var limited = Math.min(distance, maxDistance);
+      var angle = Math.atan2(dy, dx);
+      var knobX = Math.cos(angle) * limited;
+      var knobY = Math.sin(angle) * limited;
+      var deadZone = maxDistance * 0.16;
+      var strength = distance < deadZone ? 0 : limited / maxDistance;
+      self.joystick.x = Math.cos(angle) * strength;
+      self.joystick.z = Math.sin(angle) * strength;
+      if (joystickKnob) {
+        joystickKnob.style.transform = "translate(calc(-50% + " + knobX + "px), calc(-50% + " + knobY + "px))";
+      }
+    };
+    if (joystick) {
+      joystick.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        self.joystick.active = true;
+        self.joystick.pointer = event.pointerId;
+        joystick.setPointerCapture(event.pointerId);
+        updateJoystick(event);
+      });
+      joystick.addEventListener("pointermove", function (event) {
+        event.preventDefault();
+        updateJoystick(event);
+      });
+      joystick.addEventListener("pointerup", function (event) {
+        if (event.pointerId === self.joystick.pointer) resetJoystick();
+      });
+      joystick.addEventListener("pointercancel", function (event) {
+        if (event.pointerId === self.joystick.pointer) resetJoystick();
+      });
+    }
     document.querySelectorAll("[data-touch]").forEach(function (button) {
       var action = button.dataset.touch;
       button.addEventListener("pointerdown", function (event) {
@@ -133,9 +187,11 @@
   };
 
   Input.prototype.axis = function () {
+    var keyboardX = (this.keys.d || this.keys.arrowright || this.touch.right ? 1 : 0) - (this.keys.a || this.keys.arrowleft || this.touch.left ? 1 : 0);
+    var keyboardZ = (this.keys.s || this.keys.arrowdown || this.touch.back ? 1 : 0) - (this.keys.w || this.keys.arrowup || this.touch.forward ? 1 : 0);
     return {
-      x: (this.keys.d || this.keys.arrowright || this.touch.right ? 1 : 0) - (this.keys.a || this.keys.arrowleft || this.touch.left ? 1 : 0),
-      z: (this.keys.s || this.keys.arrowdown || this.touch.back ? 1 : 0) - (this.keys.w || this.keys.arrowup || this.touch.forward ? 1 : 0)
+      x: this.joystick.active ? this.joystick.x : keyboardX,
+      z: this.joystick.active ? this.joystick.z : keyboardZ
     };
   };
 
@@ -200,10 +256,13 @@
   }
 
   function Materials() {
-    this.rock = new THREE.MeshLambertMaterial({ color: 0xc07737, emissive: 0x241004 });
-    this.rockTop = new THREE.MeshLambertMaterial({ color: 0xffd36a, emissive: 0x241604 });
+    this.rock = new THREE.MeshLambertMaterial({ color: 0xc07737, emissive: 0x241004, flatShading: true });
+    this.rockTop = new THREE.MeshLambertMaterial({ color: 0xffd36a, emissive: 0x241604, flatShading: true });
+    this.rockLight = new THREE.MeshLambertMaterial({ color: 0xd88a45, emissive: 0x1d0d04, flatShading: true });
+    this.rockDark = new THREE.MeshLambertMaterial({ color: 0x6e3e2d, emissive: 0x0c0402, flatShading: true });
     this.darkRock = new THREE.MeshLambertMaterial({ color: 0x8c533a, emissive: 0x160806 });
     this.grass = new THREE.MeshLambertMaterial({ color: 0x34cf59, emissive: 0x06280a });
+    this.grassDark = new THREE.MeshLambertMaterial({ color: 0x16873f, emissive: 0x031406 });
     this.sand = new THREE.MeshLambertMaterial({ color: 0xffdc83 });
     this.trunk = new THREE.MeshLambertMaterial({ color: 0x9b5c38 });
     this.leaf = new THREE.MeshLambertMaterial({ color: 0x3ccc66 });
@@ -221,6 +280,7 @@
     this.white = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.72 });
     this.cloudSoft = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false });
     this.cloudShade = new THREE.MeshBasicMaterial({ color: 0xb9efff, transparent: true, opacity: 0.34, depthWrite: false });
+    this.softShadow = new THREE.MeshBasicMaterial({ color: 0x1e120a, transparent: true, opacity: 0.22, depthWrite: false });
   }
 
   function VolcanoGame(input) {
@@ -288,7 +348,7 @@
 
     var ambient = new THREE.AmbientLight(0x78cfff, 0.34);
     this.scene.add(ambient);
-    var hemi = new THREE.HemisphereLight(0xe7fbff, 0x65d36f, 0.98);
+    var hemi = new THREE.HemisphereLight(0xe7fbff, 0xd4a35f, 0.98);
     this.scene.add(hemi);
     var sun = new THREE.DirectionalLight(0xfff4be, 1.05);
     sun.position.set(-160, 260, 120);
@@ -301,6 +361,8 @@
     sun.shadow.camera.bottom = -140;
     sun.shadow.camera.near = 1;
     sun.shadow.camera.far = 560;
+    sun.shadow.bias = 0.00018;
+    sun.shadow.radius = 2;
     this.scene.add(sun);
     var fill = new THREE.DirectionalLight(0x85e8ff, 0.36);
     fill.position.set(130, 90, -160);
@@ -477,6 +539,73 @@
     this.lavaGlowMesh = new THREE.Mesh(new THREE.CylinderGeometry(WORLD.radius + 12, WORLD.radius + 22, 2, 48), this.materials.lavaGlow);
     this.scene.add(this.lavaMesh);
     this.scene.add(this.lavaGlowMesh);
+  };
+
+  VolcanoGame.prototype.createRockBodyGeometry = function (radius, phase) {
+    var geometry = new THREE.Geometry();
+    var segments = 12;
+    var rings = [
+      { y: 1.3, radius: radius * 1.02 },
+      { y: -2.2, radius: radius * 1.14 },
+      { y: -7.8, radius: radius * 0.72 }
+    ];
+
+    for (var ring = 0; ring < rings.length; ring += 1) {
+      for (var i = 0; i < segments; i += 1) {
+        var angle = i * Math.PI * 2 / segments;
+        var wobble = 1 + seededWave(phase, i, ring) * 0.08 + seededWave(phase + 3, i, ring) * 0.045;
+        var squash = 1 + Math.sin(angle * 2 + phase) * 0.035;
+        geometry.vertices.push(new THREE.Vector3(
+          Math.cos(angle) * rings[ring].radius * wobble,
+          rings[ring].y + seededWave(phase + 7, i, ring) * 0.45,
+          Math.sin(angle) * rings[ring].radius * wobble * squash
+        ));
+      }
+    }
+
+    var bottomCenterIndex = geometry.vertices.length;
+    geometry.vertices.push(new THREE.Vector3(0, -12.2, 0));
+
+    for (var layer = 0; layer < rings.length - 1; layer += 1) {
+      var start = layer * segments;
+      var next = (layer + 1) * segments;
+      for (var face = 0; face < segments; face += 1) {
+        var a = start + face;
+        var b = start + (face + 1) % segments;
+        var c = next + (face + 1) % segments;
+        var d = next + face;
+        geometry.faces.push(new THREE.Face3(a, b, d));
+        geometry.faces.push(new THREE.Face3(b, c, d));
+      }
+    }
+
+    var bottomStart = (rings.length - 1) * segments;
+    for (var bottom = 0; bottom < segments; bottom += 1) {
+      geometry.faces.push(new THREE.Face3(bottomStart + (bottom + 1) % segments, bottomStart + bottom, bottomCenterIndex));
+    }
+
+    geometry.computeFaceNormals();
+    return geometry;
+  };
+
+  VolcanoGame.prototype.createTopGeometry = function (radius, phase) {
+    var geometry = new THREE.Geometry();
+    var segments = 12;
+    geometry.vertices.push(new THREE.Vector3(0, 0.85, 0));
+    for (var i = 0; i < segments; i += 1) {
+      var angle = i * Math.PI * 2 / segments;
+      var wobble = 1 + seededWave(phase + 11, i, 1) * 0.075;
+      geometry.vertices.push(new THREE.Vector3(
+        Math.cos(angle) * radius * wobble,
+        0.85 + seededWave(phase + 13, i, 2) * 0.22,
+        Math.sin(angle) * radius * wobble
+      ));
+    }
+    for (var face = 0; face < segments; face += 1) {
+      geometry.faces.push(new THREE.Face3(0, ((face + 1) % segments) + 1, face + 1));
+    }
+    geometry.computeFaceNormals();
+    return geometry;
   };
 
   VolcanoGame.prototype.addOceanHighlights = function () {
@@ -676,7 +805,7 @@
         x: route[i].x,
         y: route[i].y,
         z: route[i].z,
-        radius: i === 0 ? 23 : 15,
+        radius: i === 0 ? 18 : 15,
         type: type,
         route: true,
         phase: this.random.range(0, 10)
@@ -708,28 +837,46 @@
 
   VolcanoGame.prototype.addPlatform = function (platform) {
     var colors = PLATFORM[platform.type];
-    var material = new THREE.MeshLambertMaterial({ color: colors.color, emissive: 0x100704 });
-    var topMaterial = new THREE.MeshLambertMaterial({ color: colors.top, emissive: 0x051204 });
-    var base = new THREE.Mesh(new THREE.CylinderGeometry(platform.radius, platform.radius + 3, 7, 12), material);
-    var cap = new THREE.Mesh(new THREE.CylinderGeometry(platform.radius * 0.92, platform.radius, 2, 12), topMaterial);
+    var material = new THREE.MeshLambertMaterial({ color: colors.color, emissive: 0x0d0503, flatShading: true });
+    var topMaterial = new THREE.MeshLambertMaterial({ color: colors.top, emissive: 0x031004, flatShading: true });
+    var base = new THREE.Mesh(this.createRockBodyGeometry(platform.radius, platform.phase), material);
+    var cap = new THREE.Mesh(this.createTopGeometry(platform.radius * 0.98, platform.phase), topMaterial);
     var group = new THREE.Group();
-    base.position.y = -3.5;
-    cap.position.y = 1;
+    cap.position.y = 1.25;
     base.castShadow = true;
-    base.receiveShadow = true;
+    base.receiveShadow = false;
     cap.castShadow = true;
     cap.receiveShadow = true;
     group.add(base);
     group.add(cap);
 
     var grassLip = new THREE.Mesh(
-      new THREE.TorusGeometry(platform.radius * 0.86, 0.75, 6, 24),
+      new THREE.TorusGeometry(platform.radius * 0.88, 0.58, 6, 24),
       this.materials.grass
     );
     grassLip.rotation.x = Math.PI / 2;
-    grassLip.position.y = 2.5;
+    grassLip.position.y = 2.15;
     grassLip.castShadow = true;
     group.add(grassLip);
+
+    var underside = new THREE.Mesh(
+      new THREE.ConeGeometry(platform.radius * 0.42, 7.5, 7),
+      this.materials.rockDark
+    );
+    underside.position.y = -10.7;
+    underside.rotation.y = platform.phase;
+    underside.castShadow = true;
+    underside.receiveShadow = false;
+    group.add(underside);
+
+    var shadow = new THREE.Mesh(
+      new THREE.CircleGeometry(platform.radius * 0.9, 18),
+      this.materials.softShadow
+    );
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = -12.35;
+    shadow.scale.z = 0.62;
+    group.add(shadow);
 
     this.decoratePlatform(group, platform);
 
@@ -772,8 +919,26 @@
         var tuft = new THREE.Mesh(new THREE.ConeGeometry(1.2, 4.5, 5), this.materials.leafLight);
         tuft.position.set(Math.cos(angle) * platform.radius * 0.62, 4.1, Math.sin(angle) * platform.radius * 0.62);
         tuft.rotation.z = this.random.range(-0.2, 0.2);
+        tuft.castShadow = true;
         group.add(tuft);
       }
+    }
+
+    for (var chip = 0; chip < 4; chip += 1) {
+      var chipAngle = platform.phase + chip * Math.PI * 0.5 + this.random.range(-0.18, 0.18);
+      var chipMesh = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(this.random.range(1.3, 2.6), 0),
+        chip % 2 === 0 ? this.materials.rockLight : this.materials.darkRock
+      );
+      chipMesh.position.set(
+        Math.cos(chipAngle) * platform.radius * this.random.range(0.72, 0.94),
+        this.random.range(-2.8, 0.1),
+        Math.sin(chipAngle) * platform.radius * this.random.range(0.72, 0.94)
+      );
+      chipMesh.rotation.set(this.random.range(0, 1), this.random.range(0, 1), this.random.range(0, 1));
+      chipMesh.castShadow = true;
+      chipMesh.receiveShadow = false;
+      group.add(chipMesh);
     }
 
     if (platform.type === "spring") {

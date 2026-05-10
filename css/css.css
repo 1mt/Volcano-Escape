@@ -264,30 +264,52 @@ h2 {
   touch-action: none;
 }
 
-.move-pad {
-  display: grid;
-  grid-template-columns: repeat(3, 58px);
-  grid-template-rows: repeat(2, 54px);
-  gap: 8px;
+.joystick {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  border: 3px solid rgba(255, 255, 255, 0.36);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(255, 242, 197, 0.24) 0 27%, transparent 28%),
+    rgba(31, 19, 58, 0.42);
+  box-shadow: 0 8px 0 rgba(44, 24, 64, 0.32);
+  pointer-events: auto;
+  touch-action: none;
 }
 
-.move-pad [data-touch="forward"] {
-  grid-column: 2;
+.joystick::before,
+.joystick::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.22);
 }
 
-.move-pad [data-touch="left"] {
-  grid-column: 1;
-  grid-row: 2;
+.joystick::before {
+  left: 50%;
+  top: 14px;
+  width: 2px;
+  height: calc(100% - 28px);
 }
 
-.move-pad [data-touch="back"] {
-  grid-column: 2;
-  grid-row: 2;
+.joystick::after {
+  left: 14px;
+  top: 50%;
+  width: calc(100% - 28px);
+  height: 2px;
 }
 
-.move-pad [data-touch="right"] {
-  grid-column: 3;
-  grid-row: 2;
+.joystick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--cream), var(--gold));
+  box-shadow: 0 7px 0 rgba(44, 24, 64, 0.42);
+  transform: translate(-50%, -50%);
+  will-change: transform;
 }
 
 .action-pad {
