@@ -1,62 +1,84 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-	<title>Volcano Escape!</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	<link href="css/css.css" rel="stylesheet" type="text/css">
-	<link rel="shortcut icon" type="image/png" href="favicon.png" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffcf4a">
+  <title>Volcano Escape DX</title>
+  <link rel="shortcut icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="css/css.css">
 </head>
-
 <body>
+  <main class="game-shell" aria-label="Volcano Escape DX">
+    <div id="gameMount" aria-label="3D playfield"></div>
 
-	<script src="js/three.js"></script>
-	<script src="js/controls/controls.js"></script>
-	<script src="js/loaders/MTLLoader.js"></script>
-	<script src="js/loaders/OBJLoader.js"></script>
+    <section class="hud" aria-live="polite">
+      <div>
+        <span class="hud-label">Height</span>
+        <strong id="heightValue">0m</strong>
+      </div>
+      <div>
+        <span class="hud-label">Coins</span>
+        <strong id="gemValue">0</strong>
+      </div>
+      <div>
+        <span class="hud-label">Best</span>
+        <strong id="bestValue">0m</strong>
+      </div>
+    </section>
 
-	<div id="blocker"></div>
-	<div id="instructions">
-		<p class="keyboard-instructions"> (W, A, S, D = Move, SPACE = Jump, MOUSE = Look around)</p>
-		<p class="button button-blue" id="backBtn">« Back</p>
-	</div>
-	<div id="selectMenu">
-		<p class="button button-level" id="iceyBtn">Icey Peak</p>
-		<p class="button button-level" id="chemicalBtn">Chemical Lab</p>
-		<p class="button button-blue" id="backBtn">« Back</p>
-	</div>
+    <section class="power-meter" aria-label="Boost meter">
+      <div id="boostFill"></div>
+    </section>
 
-	<div id="pauseScreen">
-		<p class="button button-continue" id="continueBtn">Continue</p>
-		<p class="button button-quit" id="quitBtn">Quit</p>
-	</div>
-	<div id="menuScreen">
-		<div id="loadingScreen">
-			<video autoplay="true" poster="images/loadingPoster.jpg">
-				<source src="media/loading.mp4" type="video/mp4">
-			</video>
-		</div>
-		<img src="images/volcanoescape3.png" alt="volcano" height="700">
-		<div id="muteBtn"> </div>
-		<div id="buttons">
-			<p class="button button-play" id="playBtn">Play</p>
-			<p class="button button-level" id="slectLevelBtn">Select Level</p>
-			<p class="button button-help" id="helpBtn">Help</p>
-		</div>
-		<script src="js/mainGame.js"></script>
-		<div id="slidecontainer">
-			<p>DIFFICULTY</p>
-			<input type="range" min="0" max="8" value="3" class="slider" id="lavaSpeed">
-		</div>
-	</div>
-	<div id="scoreContainer">
-	</div>
-	<div id="scoreDisplay">
-	</div>
-	<div id="score">
-		<p id="scoreText"></p>
-	</div>
+    <section class="panel" id="menuPanel">
+      <p class="eyebrow">Volcano Escape DX</p>
+      <h1>Jump out before the lava catches you.</h1>
+      <p class="intro">Leap through a tropical volcano in first person, ride spring rocks, grab coins, and climb past the lava to the island sky gate.</p>
+      <div class="menu-actions">
+        <button id="playButton" class="primary-button" type="button">Play</button>
+        <button id="practiceButton" class="secondary-button" type="button">Practice</button>
+      </div>
+      <div class="difficulty-row">
+        <label for="difficultySelect">Heat</label>
+        <select id="difficultySelect">
+          <option value="chill">Chill</option>
+          <option value="normal" selected>Normal</option>
+          <option value="eruption">Eruption</option>
+        </select>
+      </div>
+      <p class="controls-copy">Move: WASD. Look: mouse. Jump: Space. Dash: Shift. Pause: P or Esc.</p>
+    </section>
+
+    <section class="panel compact hidden" id="pausePanel">
+      <p class="eyebrow">Paused</p>
+      <h2>Catch your breath.</h2>
+      <div class="menu-actions">
+        <button id="resumeButton" class="primary-button" type="button">Resume</button>
+        <button id="restartPauseButton" class="secondary-button" type="button">Restart</button>
+      </div>
+    </section>
+
+    <section class="panel compact hidden" id="resultPanel">
+      <p class="eyebrow" id="resultEyebrow">Run Over</p>
+      <h2 id="resultTitle">The lava got you.</h2>
+      <p class="intro" id="resultStats">Height 0m - Coins 0</p>
+      <div class="menu-actions">
+        <button id="restartButton" class="primary-button" type="button">Try Again</button>
+        <button id="menuButton" class="secondary-button" type="button">Menu</button>
+      </div>
+    </section>
+
+    <nav class="touch-controls" aria-label="Touch controls">
+      <button data-touch="left" type="button" aria-label="Move left">&lt;</button>
+      <button data-touch="jump" type="button" aria-label="Jump">^</button>
+      <button data-touch="right" type="button" aria-label="Move right">&gt;</button>
+      <button data-touch="boost" type="button" aria-label="Boost">*</button>
+    </nav>
+  </main>
+
+  <script src="js/three.js"></script>
+  <script src="js/controls/controls.js"></script>
+  <script src="js/game3d.js"></script>
 </body>
-
 </html>
