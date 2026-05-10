@@ -206,14 +206,16 @@ h2 {
   box-shadow: 0 3px 0 rgba(44, 24, 64, 0.5);
 }
 
-.difficulty-row {
+.difficulty-row,
+.sensitivity-row {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-top: 18px;
 }
 
-.difficulty-row label {
+.difficulty-row label,
+.sensitivity-row label {
   color: var(--gold);
   font-weight: 900;
   text-transform: uppercase;
@@ -229,6 +231,11 @@ h2 {
   font-weight: 800;
 }
 
+.sensitivity-row input {
+  width: min(260px, 52vw);
+  accent-color: var(--gold);
+}
+
 .controls-copy {
   margin-top: 18px;
   color: #c9e9ff;
@@ -237,19 +244,55 @@ h2 {
 
 .touch-controls {
   position: fixed;
-  left: 50%;
+  left: 14px;
+  right: 14px;
   bottom: 18px;
   display: none;
-  gap: 10px;
-  transform: translateX(-50%);
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 18px;
   z-index: 4;
+  pointer-events: none;
 }
 
 .touch-controls button {
   width: 58px;
   height: 54px;
   background: rgba(255, 242, 197, 0.88);
-  font-size: 24px;
+  font-size: 18px;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.move-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  grid-template-rows: repeat(2, 54px);
+  gap: 8px;
+}
+
+.move-pad [data-touch="forward"] {
+  grid-column: 2;
+}
+
+.move-pad [data-touch="left"] {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.move-pad [data-touch="back"] {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.move-pad [data-touch="right"] {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.action-pad {
+  display: flex;
+  gap: 10px;
 }
 
 @media (hover: none), (pointer: coarse) {
@@ -275,7 +318,7 @@ h2 {
   .power-meter {
     top: auto;
     right: 10px;
-    bottom: 84px;
+    bottom: 146px;
     width: 120px;
   }
 

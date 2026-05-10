@@ -11,6 +11,7 @@
     best: document.getElementById("bestValue"),
     boost: document.getElementById("boostFill"),
     difficulty: document.getElementById("difficultySelect"),
+    sensitivity: document.getElementById("sensitivitySlider"),
     resultEyebrow: document.getElementById("resultEyebrow"),
     resultTitle: document.getElementById("resultTitle"),
     resultStats: document.getElementById("resultStats")
@@ -35,11 +36,11 @@
   };
 
   var PLATFORM = {
-    stone: { color: 0xffb85a, top: 0xffdf78 },
-    spring: { color: 0x29d8a1, top: 0x9bffcf },
-    crumble: { color: 0xffd23f, top: 0xfff09d },
-    drift: { color: 0x56c8ff, top: 0xc8f6ff },
-    dash: { color: 0xff6fb7, top: 0xffb4dd }
+    stone: { color: 0xa86839, top: 0x46ce66 },
+    spring: { color: 0x159b7f, top: 0x7df4c2 },
+    crumble: { color: 0xc58a34, top: 0xffd96d },
+    drift: { color: 0x328fd0, top: 0x91e8ff },
+    dash: { color: 0xc65a98, top: 0xff9fd1 }
   };
 
   function clamp(value, min, max) {
@@ -70,6 +71,9 @@
     this.jumpQueued = false;
     this.pointerWanted = false;
     this.touch = {};
+    this.lookPointer = null;
+    this.lookX = 0;
+    this.lookY = 0;
     this.bind();
   }
 
@@ -81,7 +85,7 @@
         event.preventDefault();
       }
       if (key === " " || key === "arrowup") self.jumpQueued = true;
-      if (key === "p") {
+      if (key === "p" || key === "escape") {
         if (game && game.mode === "playing") game.pause();
         else if (game && game.mode === "paused") game.resume();
       }
@@ -92,7 +96,28 @@
     });
     mount.addEventListener("click", function () {
       self.pointerWanted = true;
-      requestPointer();
+      if (!isTouchDevice()) requestPointer();
+    });
+    mount.addEventListener("pointerdown", function (event) {
+      if (!isTouchDevice() || self.lookPointer !== null) return;
+      event.preventDefault();
+      self.lookPointer = event.pointerId;
+      self.lookX = event.clientX;
+      self.lookY = event.clientY;
+      mount.setPointerCapture(event.pointerId);
+    });
+    mount.addEventListener("pointermove", function (event) {
+      if (event.pointerId !== self.lookPointer || !game || game.mode !== "playing") return;
+      event.preventDefault();
+      game.rotateLook(event.clientX - self.lookX, event.clientY - self.lookY);
+      self.lookX = event.clientX;
+      self.lookY = event.clientY;
+    });
+    mount.addEventListener("pointerup", function (event) {
+      if (event.pointerId === self.lookPointer) self.lookPointer = null;
+    });
+    mount.addEventListener("pointercancel", function (event) {
+      if (event.pointerId === self.lookPointer) self.lookPointer = null;
     });
     document.querySelectorAll("[data-touch]").forEach(function (button) {
       var action = button.dataset.touch;
@@ -110,7 +135,7 @@
   Input.prototype.axis = function () {
     return {
       x: (this.keys.d || this.keys.arrowright || this.touch.right ? 1 : 0) - (this.keys.a || this.keys.arrowleft || this.touch.left ? 1 : 0),
-      z: (this.keys.s || this.keys.arrowdown ? 1 : 0) - (this.keys.w || this.keys.arrowup ? 1 : 0)
+      z: (this.keys.s || this.keys.arrowdown || this.touch.back ? 1 : 0) - (this.keys.w || this.keys.arrowup || this.touch.forward ? 1 : 0)
     };
   };
 
@@ -175,24 +200,27 @@
   }
 
   function Materials() {
-    this.rock = new THREE.MeshLambertMaterial({ color: 0xff9652 });
-    this.rockTop = new THREE.MeshLambertMaterial({ color: 0xffdd7a });
-    this.darkRock = new THREE.MeshLambertMaterial({ color: 0x6e3567 });
-    this.grass = new THREE.MeshLambertMaterial({ color: 0x4fd66d });
+    this.rock = new THREE.MeshLambertMaterial({ color: 0xc07737, emissive: 0x241004 });
+    this.rockTop = new THREE.MeshLambertMaterial({ color: 0xffd36a, emissive: 0x241604 });
+    this.darkRock = new THREE.MeshLambertMaterial({ color: 0x8c533a, emissive: 0x160806 });
+    this.grass = new THREE.MeshLambertMaterial({ color: 0x34cf59, emissive: 0x06280a });
     this.sand = new THREE.MeshLambertMaterial({ color: 0xffdc83 });
     this.trunk = new THREE.MeshLambertMaterial({ color: 0x9b5c38 });
     this.leaf = new THREE.MeshLambertMaterial({ color: 0x3ccc66 });
     this.leafLight = new THREE.MeshLambertMaterial({ color: 0x76f08b });
     this.flowerPink = new THREE.MeshLambertMaterial({ color: 0xff78bf });
     this.flowerYellow = new THREE.MeshLambertMaterial({ color: 0xffe85e });
-    this.water = new THREE.MeshBasicMaterial({ color: 0x55dcff, transparent: true, opacity: 0.74 });
-    this.wallStripeA = new THREE.MeshLambertMaterial({ color: 0xc95f72 });
-    this.wallStripeB = new THREE.MeshLambertMaterial({ color: 0xff9b58 });
+    this.water = new THREE.MeshBasicMaterial({ color: 0x24cfff, transparent: true, opacity: 0.78 });
+    this.deepWater = new THREE.MeshBasicMaterial({ color: 0x0077d6, transparent: true, opacity: 0.86 });
+    this.wallStripeA = new THREE.MeshLambertMaterial({ color: 0xc07844, emissive: 0x180904 });
+    this.wallStripeB = new THREE.MeshLambertMaterial({ color: 0xf0a552, emissive: 0x1e1003 });
     this.crystal = new THREE.MeshLambertMaterial({ color: 0x74f7ff, emissive: 0x173c54 });
     this.lava = new THREE.MeshBasicMaterial({ color: 0xff522e, transparent: true, opacity: 0.92 });
     this.lavaGlow = new THREE.MeshBasicMaterial({ color: 0xffc846, transparent: true, opacity: 0.48 });
     this.coin = new THREE.MeshLambertMaterial({ color: 0xffe24b, emissive: 0x5a3100 });
     this.white = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.72 });
+    this.cloudSoft = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, depthWrite: false });
+    this.cloudShade = new THREE.MeshBasicMaterial({ color: 0xb9efff, transparent: true, opacity: 0.34, depthWrite: false });
   }
 
   function VolcanoGame(input) {
@@ -224,8 +252,11 @@
     this.lavaMesh = null;
     this.lavaGlowMesh = null;
     this.skyGate = null;
+    this.lookSensitivity = Number(localStorage.getItem("volcanoEscapeLookSensitivity") || 135) / 100;
+    if (ui.sensitivity) ui.sensitivity.value = String(Math.round(this.lookSensitivity * 100));
     this.initRenderer();
     this.initScene();
+    this.bindSettings();
     this.updateUi();
     this.loop();
   }
@@ -234,7 +265,7 @@
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setClearColor(0x6ac7ff);
+    this.renderer.setClearColor(0x0098ff);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(this.renderer.domElement);
@@ -242,6 +273,7 @@
     this.camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 2600);
     this.controls = new THREE.PointerLockControls(this.camera);
     this.controls.enabled = false;
+    if (this.controls.setSensitivity) this.controls.setSensitivity(this.lookSensitivity);
 
     window.addEventListener("resize", this.resize.bind(this));
     document.addEventListener("pointerlockchange", this.onPointerLock.bind(this));
@@ -251,22 +283,89 @@
 
   VolcanoGame.prototype.initScene = function () {
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(0x8edcff, 90, 430);
+    this.scene.fog = new THREE.Fog(0x59d9ff, 420, 1250);
     this.materials = new Materials();
 
-    var hemi = new THREE.HemisphereLight(0xd8f7ff, 0x7b3b32, 0.82);
+    var ambient = new THREE.AmbientLight(0x78cfff, 0.34);
+    this.scene.add(ambient);
+    var hemi = new THREE.HemisphereLight(0xe7fbff, 0x65d36f, 0.98);
     this.scene.add(hemi);
-    var sun = new THREE.DirectionalLight(0xfff2bd, 1.3);
-    sun.position.set(-90, 180, 70);
+    var sun = new THREE.DirectionalLight(0xfff4be, 1.05);
+    sun.position.set(-160, 260, 120);
     sun.castShadow = true;
-    sun.shadow.camera.left = -120;
-    sun.shadow.camera.right = 120;
-    sun.shadow.camera.top = 160;
-    sun.shadow.camera.bottom = -80;
+    sun.shadow.mapSize.width = 2048;
+    sun.shadow.mapSize.height = 2048;
+    sun.shadow.camera.left = -180;
+    sun.shadow.camera.right = 180;
+    sun.shadow.camera.top = 220;
+    sun.shadow.camera.bottom = -140;
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 560;
     this.scene.add(sun);
+    var fill = new THREE.DirectionalLight(0x85e8ff, 0.36);
+    fill.position.set(130, 90, -160);
+    this.scene.add(fill);
 
     this.scene.add(this.controls.getObject());
+    this.addSkyDome();
     this.buildWorldShell();
+  };
+
+  VolcanoGame.prototype.bindSettings = function () {
+    var self = this;
+    if (!ui.sensitivity) return;
+    ui.sensitivity.addEventListener("input", function () {
+      self.setLookSensitivity(Number(ui.sensitivity.value) / 100);
+    });
+  };
+
+  VolcanoGame.prototype.setLookSensitivity = function (value) {
+    this.lookSensitivity = clamp(value || 1, 0.6, 2.2);
+    localStorage.setItem("volcanoEscapeLookSensitivity", String(Math.round(this.lookSensitivity * 100)));
+    if (this.controls && this.controls.setSensitivity) this.controls.setSensitivity(this.lookSensitivity);
+  };
+
+  VolcanoGame.prototype.rotateLook = function (dx, dy) {
+    if (this.controls && this.controls.rotateBy) {
+      this.controls.rotateBy(dx, dy);
+    }
+  };
+
+  VolcanoGame.prototype.addSkyDome = function () {
+    var sky = new THREE.Mesh(
+      new THREE.SphereGeometry(900, 32, 16),
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        uniforms: {
+          topColor: { value: new THREE.Color(0x005cff) },
+          middleColor: { value: new THREE.Color(0x00c9ff) },
+          bottomColor: { value: new THREE.Color(0xe8fbff) }
+        },
+        vertexShader: [
+          "varying vec3 vWorldPosition;",
+          "void main() {",
+          "  vec4 worldPosition = modelMatrix * vec4(position, 1.0);",
+          "  vWorldPosition = worldPosition.xyz;",
+          "  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);",
+          "}"
+        ].join("\n"),
+        fragmentShader: [
+          "uniform vec3 topColor;",
+          "uniform vec3 middleColor;",
+          "uniform vec3 bottomColor;",
+          "varying vec3 vWorldPosition;",
+          "void main() {",
+          "  float h = normalize(vWorldPosition).y;",
+          "  vec3 low = mix(bottomColor, middleColor, smoothstep(-0.05, 0.35, h));",
+          "  vec3 high = mix(low, topColor, smoothstep(0.2, 0.95, h));",
+          "  gl_FragColor = vec4(high, 1.0);",
+          "}"
+        ].join("\n")
+      })
+    );
+    sky.renderOrder = -20;
+    this.scene.add(sky);
   };
 
   VolcanoGame.prototype.start = function (practice) {
@@ -286,14 +385,14 @@
     this.lavaY = -34;
     this.maxHeight = 0;
     this.coinCount = 0;
-    this.grounded = false;
-    this.coyote = 0;
+    this.grounded = true;
+    this.coyote = 0.25;
     this.dash = 1;
     this.routeIndex = 0;
     ui.menu.classList.add("hidden");
     ui.pause.classList.add("hidden");
     ui.result.classList.add("hidden");
-    requestPointer();
+    if (!isTouchDevice()) requestPointer();
     this.updateUi();
   };
 
@@ -313,15 +412,18 @@
 
   VolcanoGame.prototype.buildWorldShell = function () {
     var ocean = new THREE.Mesh(
-      new THREE.CylinderGeometry(650, 650, 5, 96),
-      new THREE.MeshLambertMaterial({ color: 0x28b8d7 })
+      new THREE.CylinderGeometry(780, 780, 6, 128),
+      this.materials.deepWater
     );
     ocean.position.y = -44;
     ocean.receiveShadow = true;
     this.scene.add(ocean);
 
+    this.addOceanHighlights();
+    this.addOuterIslands();
+
     var island = new THREE.Mesh(
-      new THREE.CylinderGeometry(118, 144, 20, 24),
+      new THREE.CylinderGeometry(122, 154, 22, 32),
       this.materials.sand
     );
     island.position.y = -38;
@@ -330,7 +432,7 @@
     this.scene.add(island);
 
     var grass = new THREE.Mesh(
-      new THREE.CylinderGeometry(105, 118, 7, 24),
+      new THREE.CylinderGeometry(108, 121, 8, 32),
       this.materials.grass
     );
     grass.position.y = -25;
@@ -340,8 +442,14 @@
     this.addIslandDetails();
 
     var shaft = new THREE.Mesh(
-      new THREE.CylinderGeometry(WORLD.radius + 18, WORLD.radius + 40, WORLD.goalHeight + 280, 32, 1, true),
-      new THREE.MeshLambertMaterial({ color: 0x9a4f78, side: THREE.BackSide })
+      new THREE.CylinderGeometry(WORLD.radius + 18, WORLD.radius + 44, WORLD.goalHeight + 280, 40, 1, true),
+      new THREE.MeshLambertMaterial({
+        color: 0xb97645,
+        emissive: 0x0f0703,
+        side: THREE.BackSide,
+        transparent: true,
+        opacity: 0.34
+      })
     );
     shaft.position.y = WORLD.goalHeight / 2 + 70;
     this.scene.add(shaft);
@@ -369,6 +477,60 @@
     this.lavaGlowMesh = new THREE.Mesh(new THREE.CylinderGeometry(WORLD.radius + 12, WORLD.radius + 22, 2, 48), this.materials.lavaGlow);
     this.scene.add(this.lavaMesh);
     this.scene.add(this.lavaGlowMesh);
+  };
+
+  VolcanoGame.prototype.addOceanHighlights = function () {
+    for (var i = 0; i < 18; i += 1) {
+      var angle = this.random.range(0, Math.PI * 2);
+      var radius = this.random.range(170, 620);
+      var streak = new THREE.Mesh(
+        new THREE.PlaneGeometry(this.random.range(28, 90), 2.2, 1, 1),
+        this.materials.water
+      );
+      streak.position.set(Math.cos(angle) * radius, -39.8, Math.sin(angle) * radius);
+      streak.rotation.x = -Math.PI / 2;
+      streak.rotation.z = angle + this.random.range(-0.8, 0.8);
+      this.scene.add(streak);
+    }
+  };
+
+  VolcanoGame.prototype.addOuterIslands = function () {
+    var islandData = [
+      { angle: -0.65, radius: 300, scale: 1.15 },
+      { angle: 0.92, radius: 420, scale: 0.78 },
+      { angle: 2.4, radius: 360, scale: 0.95 }
+    ];
+    for (var i = 0; i < islandData.length; i += 1) {
+      var data = islandData[i];
+      var group = new THREE.Group();
+      var base = new THREE.Mesh(
+        new THREE.CylinderGeometry(54 * data.scale, 68 * data.scale, 18 * data.scale, 16),
+        this.materials.sand
+      );
+      var top = new THREE.Mesh(
+        new THREE.CylinderGeometry(46 * data.scale, 56 * data.scale, 6 * data.scale, 16),
+        this.materials.grass
+      );
+      base.position.y = -35;
+      top.position.y = -22;
+      base.receiveShadow = true;
+      top.receiveShadow = true;
+      group.add(base);
+      group.add(top);
+      for (var p = 0; p < 5; p += 1) {
+        var palmAngle = p * Math.PI * 2 / 5;
+        var palmX = Math.cos(palmAngle) * 28 * data.scale;
+        var palmZ = Math.sin(palmAngle) * 22 * data.scale;
+        var trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.2 * data.scale, 1.8 * data.scale, 18 * data.scale, 6), this.materials.trunk);
+        trunk.position.set(palmX, -10, palmZ);
+        var crown = new THREE.Mesh(new THREE.ConeGeometry(7 * data.scale, 11 * data.scale, 6), this.materials.leaf);
+        crown.position.set(palmX, 2, palmZ);
+        group.add(trunk);
+        group.add(crown);
+      }
+      group.position.set(Math.cos(data.angle) * data.radius, 0, Math.sin(data.angle) * data.radius);
+      this.scene.add(group);
+    }
   };
 
   VolcanoGame.prototype.addIslandDetails = function () {
@@ -449,15 +611,21 @@
   };
 
   VolcanoGame.prototype.addClouds = function () {
-    for (var i = 0; i < 24; i += 1) {
+    for (var i = 0; i < 30; i += 1) {
       var group = new THREE.Group();
       var angle = this.random.range(0, Math.PI * 2);
-      var radius = this.random.range(140, 360);
-      var height = this.random.range(140, WORLD.goalHeight + 300);
+      var radius = this.random.range(210, 620);
+      var height = this.random.range(110, WORLD.goalHeight + 430);
       group.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
-      for (var puff = 0; puff < 4; puff += 1) {
-        var mesh = new THREE.Mesh(new THREE.SphereGeometry(this.random.range(5, 12), 10, 8), this.materials.white);
-        mesh.position.set(this.random.range(-11, 11), this.random.range(-2, 4), this.random.range(-7, 7));
+      group.lookAt(new THREE.Vector3(0, height, 0));
+      for (var puff = 0; puff < 6; puff += 1) {
+        var mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(this.random.range(7, 18), 12, 8),
+          puff % 3 === 0 ? this.materials.cloudShade : this.materials.cloudSoft
+        );
+        mesh.position.set(this.random.range(-22, 22), this.random.range(-4, 7), this.random.range(-8, 8));
+        mesh.scale.x = this.random.range(1.25, 2.8);
+        mesh.scale.z = this.random.range(0.55, 1.05);
         group.add(mesh);
       }
       this.scene.add(group);
@@ -540,8 +708,8 @@
 
   VolcanoGame.prototype.addPlatform = function (platform) {
     var colors = PLATFORM[platform.type];
-    var material = new THREE.MeshLambertMaterial({ color: colors.color });
-    var topMaterial = new THREE.MeshLambertMaterial({ color: colors.top });
+    var material = new THREE.MeshLambertMaterial({ color: colors.color, emissive: 0x100704 });
+    var topMaterial = new THREE.MeshLambertMaterial({ color: colors.top, emissive: 0x051204 });
     var base = new THREE.Mesh(new THREE.CylinderGeometry(platform.radius, platform.radius + 3, 7, 12), material);
     var cap = new THREE.Mesh(new THREE.CylinderGeometry(platform.radius * 0.92, platform.radius, 2, 12), topMaterial);
     var group = new THREE.Group();
@@ -553,6 +721,15 @@
     cap.receiveShadow = true;
     group.add(base);
     group.add(cap);
+
+    var grassLip = new THREE.Mesh(
+      new THREE.TorusGeometry(platform.radius * 0.86, 0.75, 6, 24),
+      this.materials.grass
+    );
+    grassLip.rotation.x = Math.PI / 2;
+    grassLip.position.y = 2.5;
+    grassLip.castShadow = true;
+    group.add(grassLip);
 
     this.decoratePlatform(group, platform);
 
@@ -584,7 +761,7 @@
     var colors = PLATFORM[platform.type];
     var marker = new THREE.Mesh(
       new THREE.CylinderGeometry(platform.radius * 0.34, platform.radius * 0.38, 0.7, 12),
-      new THREE.MeshBasicMaterial({ color: colors.top })
+      new THREE.MeshLambertMaterial({ color: platform.type === "stone" ? 0xffdd7a : colors.top, emissive: 0x080400 })
     );
     marker.position.y = 2.6;
     group.add(marker);
@@ -646,15 +823,20 @@
   VolcanoGame.prototype.createSkyGate = function () {
     var group = new THREE.Group();
     var mat = new THREE.MeshLambertMaterial({ color: 0xffed72 });
+    var glowMat = new THREE.MeshBasicMaterial({ color: 0xfff8b0, transparent: true, opacity: 0.38 });
     var sideA = new THREE.Mesh(new THREE.BoxGeometry(8, 48, 8), mat);
     var sideB = sideA.clone();
     var top = new THREE.Mesh(new THREE.BoxGeometry(62, 8, 8), mat);
+    var glow = new THREE.Mesh(new THREE.TorusGeometry(33, 1.8, 8, 32), glowMat);
     sideA.position.x = -28;
     sideB.position.x = 28;
     top.position.y = 24;
+    glow.position.y = 12;
+    glow.rotation.x = Math.PI / 2;
     group.add(sideA);
     group.add(sideB);
     group.add(top);
+    group.add(glow);
     return group;
   };
 
@@ -870,7 +1052,7 @@
     if (this.mode !== "paused") return;
     this.mode = "playing";
     ui.pause.classList.add("hidden");
-    requestPointer();
+    if (!isTouchDevice()) requestPointer();
   };
 
   VolcanoGame.prototype.showMenu = function () {
@@ -914,6 +1096,10 @@
   function requestPointer() {
     var request = mount.requestPointerLock || mount.mozRequestPointerLock || mount.webkitRequestPointerLock;
     if (request) request.call(mount);
+  }
+
+  function isTouchDevice() {
+    return window.matchMedia("(hover: none), (pointer: coarse)").matches;
   }
 
   function exitPointer() {

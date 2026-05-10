@@ -47,7 +47,11 @@
           <option value="eruption">Eruption</option>
         </select>
       </div>
-      <p class="controls-copy">Move: WASD. Look: mouse. Jump: Space. Dash: Shift. Pause: P or Esc.</p>
+      <div class="sensitivity-row">
+        <label for="sensitivitySlider">Look</label>
+        <input type="range" min="60" max="220" value="135" id="sensitivitySlider">
+      </div>
+      <p class="controls-copy">Move: WASD. Look: mouse or drag. Jump: Space. Dash: Shift. Pause: P or Esc.</p>
     </section>
 
     <section class="panel compact hidden" id="pausePanel">
@@ -70,10 +74,16 @@
     </section>
 
     <nav class="touch-controls" aria-label="Touch controls">
-      <button data-touch="left" type="button" aria-label="Move left">&lt;</button>
-      <button data-touch="jump" type="button" aria-label="Jump">^</button>
-      <button data-touch="right" type="button" aria-label="Move right">&gt;</button>
-      <button data-touch="boost" type="button" aria-label="Boost">*</button>
+      <div class="move-pad">
+        <button data-touch="forward" type="button" aria-label="Move forward">W</button>
+        <button data-touch="left" type="button" aria-label="Move left">A</button>
+        <button data-touch="back" type="button" aria-label="Move backward">S</button>
+        <button data-touch="right" type="button" aria-label="Move right">D</button>
+      </div>
+      <div class="action-pad">
+        <button data-touch="jump" type="button" aria-label="Jump">J</button>
+        <button data-touch="boost" type="button" aria-label="Dash">B</button>
+      </div>
     </nav>
   </main>
 

@@ -12,6 +12,7 @@ THREE.PointerLockControls = function ( camera ) {
 	yawObject.add( pitchObject );
 
 	var PI_2 = Math.PI / 2;
+	this.sensitivity = 1;
 
 	var onMouseMove = function ( event ) {
 
@@ -20,9 +21,21 @@ THREE.PointerLockControls = function ( camera ) {
 		var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
 		var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-		yawObject.rotation.y -= movementX * 0.002;
-		pitchObject.rotation.x -= movementY * 0.002;
+		scope.rotateBy( movementX, movementY );
 
+	};
+
+	this.setSensitivity = function ( sensitivity ) {
+
+		scope.sensitivity = Math.max( 0.35, Math.min( 3, sensitivity || 1 ) );
+
+	};
+
+	this.rotateBy = function ( movementX, movementY ) {
+
+		var amount = 0.002 * scope.sensitivity;
+		yawObject.rotation.y -= movementX * amount;
+		pitchObject.rotation.x -= movementY * amount;
 		pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
 
 	};
