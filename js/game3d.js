@@ -1264,13 +1264,23 @@
   }
 
   function isTouchDevice() {
-    return window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    return window.matchMedia("(hover: none), (pointer: coarse)").matches ||
+      navigator.maxTouchPoints > 0 ||
+      "ontouchstart" in window;
   }
 
   function exitPointer() {
     var exit = document.exitPointerLock || document.mozExitPointerLock || document.webkitExitPointerLock;
     if (exit) exit.call(document);
   }
+
+  if (isTouchDevice()) {
+    document.documentElement.classList.add("touch-device");
+  }
+
+  window.addEventListener("touchstart", function () {
+    document.documentElement.classList.add("touch-device");
+  }, { once: true });
 
   var input = new Input();
   var game = new VolcanoGame(input);
